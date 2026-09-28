@@ -45,12 +45,14 @@ const TOOTH_STATUSES = [
 ];
 let currentToothStatus = "decayed"; // الحالة (اللون) المختارة حاليًا من الباليتة للتلوين
 function toothSVGShape(n, color) {
-    // مجسم بسيط لشكل السنة (تاج + جذر) بدل مربع عادي
+    // مجسم أقرب لشكل السنة الحقيقي: تاج بيضاوي فوق + جذرين متفرعين تحت (زي المجسم التعليمي)
     return `
     <button type="button" class="tooth-cell" data-tooth="${n}" title="سنة ${n}" style="background:none;border:none;padding:0;cursor:pointer;">
-      <svg width="28" height="34" viewBox="0 0 28 34" xmlns="http://www.w3.org/2000/svg">
-        <path d="M14 1C8 1 3 4 3 10c0 4 1.5 7 2.5 11.5C6.5 26 8 33 10 33c1.5 0 2-3 2.3-6 .3-2.5 .8-4 1.7-4s1.4 1.5 1.7 4c.3 3 .8 6 2.3 6 2 0 3.5-7 4.5-11.5C23.5 17 25 14 25 10 25 4 20 1 14 1z"
-              fill="${color}" stroke="#adb5bd" stroke-width="1"/>
+      <svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 13 C 20 19, 19 27, 16.5 33" stroke="${color}" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M10 13 C 8 19, 9 27, 11.5 33" stroke="${color}" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <ellipse cx="14" cy="9" rx="10.5" ry="8" fill="${color}" stroke="#adb5bd" stroke-width="1"/>
+        <path d="M8 8 Q14 12 20 8" stroke="#ffffff88" stroke-width="1" fill="none"/>
       </svg>
       <div style="font-size:8px;text-align:center;color:#888;">${n}</div>
     </button>`;
@@ -64,15 +66,17 @@ function toothChartHTML(patient) {
         return toothSVGShape(n, cfg.color);
     };
     const row = (arr) => `<div class="d-flex gap-1 justify-content-center mb-1 flex-wrap">${arr.map(cell).join("")}</div>`;
+    // كل لون مكتوب عليه اسم حالته على طول (مش لازم تدوسي عليه عشان تعرفي معناه)
     const palette = TOOTH_STATUSES.map((s) => `
-        <button type="button" class="tooth-palette-swatch" data-status="${s.key}" title="${s.label}"
-            style="width:34px;height:34px;border-radius:8px;cursor:pointer;background:${s.color};
-                   border:3px solid ${s.key === currentToothStatus ? "#212529" : "transparent"};"></button>`).join(" ");
+        <button type="button" class="tooth-palette-swatch" data-status="${s.key}"
+            style="padding:6px 12px;border-radius:8px;cursor:pointer;background:${s.color};color:${s.text};
+                   font-size:0.85rem;font-weight:600;
+                   border:3px solid ${s.key === currentToothStatus ? "#212529" : "transparent"};">${s.label}</button>`).join(" ");
     return `
     <div class="card p-3 mb-4">
       <h6 class="mb-3"><i class="bi ${ICON.tooth}"></i> خريطة الأسنان</h6>
       <div class="mb-3">
-        <div class="text-muted small mb-2">دوسي على اللون اللي عايزاه، وبعدين دوسي على السنة تلوّنها بيه</div>
+        <div class="text-muted small mb-2">دوسي على الحالة اللي عايزاها، وبعدين دوسي على السنة تلوّنها بيها</div>
         <div class="d-flex gap-2 flex-wrap" id="toothPalette">${palette}</div>
       </div>
       ${row(upper)}
@@ -95,7 +99,8 @@ function attachToothChart(patient) {
             if (currentToothStatus === "healthy") delete teeth[n]; else teeth[n] = currentToothStatus;
             DB.Patients.update(patient.id, { teeth });
             const cfg = TOOTH_STATUSES.find((s) => s.key === currentToothStatus);
-            btn.querySelector("path").setAttribute("fill", cfg.color);
+            btn.querySelector("ellipse").setAttribute("fill", cfg.color);
+            btn.querySelectorAll("path[stroke-width='4']").forEach((p) => p.setAttribute("stroke", cfg.color));
         });
     });
 }
